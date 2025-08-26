@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 010426082127.dkr.ecr.us-east-1.amazonaws.com
+      - REPOSITORY_URI=010426082127.dkr.ecr.us-east-1.amazonaws.com/project1
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+  build:
+    commands:
+      - echo Build Docker image...
+      - docker build -t project1 .
+  post_build:
+    commands:
+      - echo Push Docker image to ECR...
+      - docker push 010426082127.dkr.ecr.us-east-1.amazonaws.com/project1:latest
+      - printf '[{"name":"my-app-container","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
